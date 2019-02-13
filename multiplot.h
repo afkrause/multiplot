@@ -857,7 +857,7 @@ public:
 				cur_point_size=0.0;
 				scroll=false;
 				pos=0;
-				max_points=10000;//max(w,h); <- setting max_points that low gives problems with scatter plots
+				max_points=10000;//std::max(w,h); <- setting max_points that low gives problems with scatter plots
 			}
 
 			/**
@@ -1325,9 +1325,9 @@ public:
 				if(diff_y!=0.0)scale.y=height/diff_y;
 				break;
 			case MP_AUTO_SCALE_EQUAL:
-				if(max(diff_x, diff_y) != 0)
+				if(std::max(diff_x, diff_y) != 0)
 				{
-					scale.x=scale.y=min(width, height) / max(diff_x, diff_y);
+					scale.x=scale.y=std::min(width, height) / std::max(diff_x, diff_y);
 					//scale.y=height/diff;
 				}
 				break;

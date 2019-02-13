@@ -1,10 +1,11 @@
 #define __TEST_THIS_MODULE__
 
-//#define MULTIPLOT_FLTK
+#define MULTIPLOT_FLTK
 
 #include "multiplot.h"
 
-void main()
+int main()
 {
-	test_module();
+    test_module();
+    return EXIT_SUCCESS;
 }
