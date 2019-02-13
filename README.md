@@ -36,3 +36,19 @@ void main()
 	}
 }
 ```
+
+## install prerequisites
+under linux, Multiplot uses the Fast Light Toolkit ( https://www.fltk.org/ ) to create an OpenGL context. 
+
+### Fedora:
+```console
+sudo dnf install fltk-devel
+```
+### Debian based Linux (Ubuntu, Linux Mint etc.):
+```console
+sudo apt-get install fltk-devel
+```
+## compile
+```console
+g++ test_multiplot.cpp -lfltk -lfltk_gl -lGL
+```
