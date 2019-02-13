@@ -122,7 +122,7 @@ CHANGELOG
 
 
 #include <iostream>
-#include <sstream>
+#include <string>
 #include <float.h>
 #include <time.h>
 #include <math.h>
@@ -950,7 +950,7 @@ public:
 		virtual ~Multiplot() {}
         // warning: unused parameter 'x'
         // warning: unused parameter 'y'
-		Multiplot(const int x,const int y,const int w,const int h, const std::wstring& ttitle=L"Multiplot - updates on www.andre-krause.net", bool fullscreen=false) : Multiplot_base(x,y,w,h,ttitle,fullscreen)
+		Multiplot(const int x,const int y,const int w,const int h, const std::wstring& ttitle=L"www.andre-krause.net/multiplot", bool fullscreen=false) : Multiplot_base(x,y,w,h,ttitle,fullscreen)
 		{
 			cur_point_size=0.0;
 			cur_trace=0;
@@ -1123,6 +1123,7 @@ public:
 		float cur_point_size;
 		unsigned int cur_trace;
 		std::wstring title;		// stores the user-title, so we can add ranges
+		std::wstring caption_str;
 		Point2d bg_color;
 		Point2d grid_color;
 
@@ -1273,6 +1274,8 @@ public:
 
 		virtual void draw()
 		{
+			using namespace std;
+
 			if(!valid() )
 			{
 				width=w();
@@ -1304,7 +1307,7 @@ public:
 			maximum.x=maximum.y=-FLT_MAX;
 			minimum.x=minimum.y=FLT_MAX;
 
-			for(unsigned int t=0;t<traces.size();t++)
+			for(size_t t=0;t<traces.size();t++)
 			{
 				traces[t].draw(minimum, maximum, scale, offset);
 			}
@@ -1340,15 +1343,15 @@ public:
 
 
 			// possible performance issue?
-			std::wstringstream ss;
-			ss << "x=[" <<  minimum.x << "; " << maximum.x << "] ";
-			ss << "y=[" <<  minimum.y << "; " << maximum.y << "] ";
+			caption_str  = L"x=[" + to_wstring(minimum.x) + L", " + to_wstring(maximum.x) + L"] ";
+			caption_str += L"y=[" + to_wstring(minimum.y) + L", " + to_wstring(maximum.y) + L"] ";
 			if(gridx != MP_NO_GRID || gridy != MP_NO_GRID)
 			{
-				ss << "dx=[" <<  grid_spacing.x << "] ";
-				ss << "dy=[" <<  grid_spacing.y << "] ";
+				caption_str += L"dx=[" + to_wstring(grid_spacing.x) + L"] ";
+				caption_str += L"dy=[" + to_wstring(grid_spacing.y) + L"] ";
 			}
-			set_caption( (ss.str() + title).c_str() );
+			caption_str += title;
+			set_caption(caption_str.c_str() );
 		}
 };
 
