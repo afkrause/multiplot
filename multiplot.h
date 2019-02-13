@@ -1250,7 +1250,7 @@ public:
                 // It doesn't work if I do.  Must be due to the glBegin() thingy?
                 // So, I'm left to do the above loop again (for now)!
                 // This hack also has the undesireable side effect of putting
-                // The Axis Label in the Plot area itself, not in a so-called margin.
+                // The Axis Label in the Plot area itself, not in a margin.
                 //********************************************************************
                 gl_font(1, 10);
                 y=starty;
@@ -1319,8 +1319,8 @@ public:
 			switch(scaling_)
 			{
 			case MP_AUTO_SCALE:
-				if(diff_x!=0.0)scale.x=width/diff_x;
-				if(diff_y!=0.0)scale.y=height/diff_y;
+				if (diff_x != 0.0) { scale.x = width / diff_x; }
+				if (diff_y != 0.0) { scale.y = height / diff_y; }
 				break;
 			case MP_AUTO_SCALE_EQUAL:
 				
@@ -1411,7 +1411,8 @@ void demo1()
 	// create a multiplot window
 	// at position (x,y)=(10,10) and with 
 	// a width and height of 300 pixels
-	Multiplot m(10, 10, 600, 300);
+	//Multiplot m(10, 10, 600, 300);
+	Multiplot m(10, 10, 512, 512);
 
 	// make it visible
 	m.show();
@@ -1622,6 +1623,39 @@ void demo7()
 	}
 }
 
+void demo8()
+{
+	#ifndef MULTIPLOT_FLTK
+	cerr << "More than one Multiplot window is currently only supported with FLTK as a backend.\n";
+	return;
+	#endif
+
+	Multiplot m1(20,  20, 600, 300);
+	Multiplot m2(20, 320, 600, 300);
+	
+	
+	m1.show();
+	m2.show();
+
+	for (int x = 0; x < 300; x++)
+	{
+		m1.plot(float(x), 0.1f*x*sin(0.1f*x));
+		m2.plot(float(x), 0.1f*x*cos(0.1f*x));
+		m1.redraw();
+		m2.redraw();
+		if (!m1.check()) { break; }
+		this_thread::sleep_for(20ms);
+	}
+
+	while (m1.check())
+	{
+		m1.redraw();
+		m2.redraw();
+		this_thread::sleep_for(100ms);
+	}
+}
+
+
 
 void test_module()
 {
@@ -1634,11 +1668,12 @@ menu:
 	std::cout << "\n(2) demo: two traces in a multiplot window with colors and scrolling.";
 	std::cout << "\n(3) demo: more settings (point size, line-width and grid).";
 	std::cout << "\n(4) demo: how to do a scatter plot (random gauss distribution).";
-	std::cout << "\n(5) demo: fullscreen (win32 only at the moment)";
-	std::cout << "\n(6) demo: plot values in a std::vector<float>";
+	std::cout << "\n(5) demo: fullscreen mode";
+	std::cout << "\n(6) demo: plot the values stored in a std::vector<float>";
 	std::cout << "\n(7) demo: no auto-scaling, set fixed scaling of both x and y axis.";
-	std::cout << "\n(8) exit.";
-	std::cout << "\nenter number of demo (1..7):";
+	std::cout << "\n(8) demo: using two or more Multiplot windows simulataneously.";
+	std::cout << "\n(9) exit.";
+	std::cout << "\nenter number of demo (1..8):";
 	std::cin >> demo_number;
 	switch (demo_number)
 	{
@@ -1649,7 +1684,8 @@ menu:
 	case 5:demo5(); break;
 	case 6:demo6(); break;
 	case 7:demo7(); break;
-	case 8:return;  break;
+	case 8:demo8(); break;
+	case 9:return;  break;
 	default:demo1(); break;
 	}
 	goto menu; // goto is not evil. at least in this case...
