@@ -171,6 +171,9 @@
   <ItemGroup>
     <ClCompile Include="..\test_multiplot.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\multiplot.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

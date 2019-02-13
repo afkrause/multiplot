@@ -138,22 +138,28 @@ CHANGELOG
 	#include <FL/Fl.H>
 	#include <FL/Fl_Gl_Window.H>
 	#include <FL/fl_draw.H>
-#endif
-
-
-
-#if defined(_WIN32) && !defined(APIENTRY)
+	// please note: don't include default gl.h, if using fltk, because fltk comes with its own gl.h
+#else
+	#if defined(_WIN32) && !defined(APIENTRY)
 	#define WIN32_LEAN_AND_MEAN 1
 	#include <windows.h>
+	#include <GL/gl.h> 
+	#pragma message("_Adding library: opengl32.lib" ) 
+	#pragma comment ( lib, "opengl32.lib")
+	#endif
 #endif
 
-#ifndef MULTIPLOT_FLTK  // don't include default gl.h, if using fltk, because fltk comes with its own gl.h
-	#include <GL/gl.h> 
-#endif
 
 
 namespace multiplot
 {
+
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
+#endif
 
 /**
 * These are the available Grid Styles.
@@ -205,7 +211,7 @@ public:
 		  return (bool)Fl::check();
 	  }
 
-	  void draw()
+	  virtual void draw()
 	  {
 		  if(!valid())
 		  {
@@ -235,11 +241,6 @@ public:
 #endif
 
 #ifdef MULTIPLOT_WIN32
-
-#ifdef _WIN32
-#pragma message("     _Adding library: opengl32.lib" ) 
-#pragma comment ( lib, "opengl32.lib")
-#endif
 
 /**
 * class Multiplot_base is for low level Window handling
@@ -1325,6 +1326,7 @@ public:
 				if(diff_y!=0.0)scale.y=height/diff_y;
 				break;
 			case MP_AUTO_SCALE_EQUAL:
+				
 				if(std::max(diff_x, diff_y) != 0)
 				{
 					scale.x=scale.y=std::min(width, height) / std::max(diff_x, diff_y);
