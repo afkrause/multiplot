@@ -995,10 +995,10 @@ public:
 		*	sets the current trace.  traces are numbered
 		*	from zero to N. memory for the traces is automatically allocated. 
 		*/
-		Trace& trace(int _trace)
+		Trace& trace(unsigned int _trace)
 		{
 			cur_trace = _trace;
-			if (cur_trace < 0) { cur_trace = 0; }
+
 			if(traces.size() <= cur_trace )
 			{
 				for(size_t a = 0; a < cur_trace - traces.size() + 1; a++)
