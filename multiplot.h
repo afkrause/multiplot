@@ -211,17 +211,14 @@ public:
 		  return (bool)Fl::check();
 	  }
 
-	  virtual void draw()
+	  virtual void draw() override
 	  {
 		  if(!valid())
 		  {
 			  valid(1);
 		  }
 
-
-		  Fl_Gl_Window::draw();
-
-
+		 // Fl_Gl_Window::draw();
 	  }
 
 	  void set_caption(const std::string& t)
