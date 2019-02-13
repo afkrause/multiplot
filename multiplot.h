@@ -1361,10 +1361,13 @@ public:
 
 #include <vector>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 #include <math.h>
 
 using namespace std; 
+using namespace chrono;
 using namespace multiplot;
 
 // These are  compiler directives that includes libraries (For Visual Studio)
@@ -1420,15 +1423,16 @@ void demo1()
 		m.plot(float(x), 0.1f*x*sin(0.1f*x));
 
 		m.redraw();
-
 		// force event propagation thus redrawing
 		if (!m.check()) { break; }
+		this_thread::sleep_for(20ms);
 	}
 
 	// wait till window is closed by user
 	while(m.check())
 	{
 		m.redraw();
+		this_thread::sleep_for(100ms);
 	}
 
 }
@@ -1468,11 +1472,13 @@ void demo2()
 
 		m.redraw();
 		if (!m.check()) { break; }
+		this_thread::sleep_for(20ms);
 	}
 
 	while(m.check())
 	{
 		m.redraw();
+		this_thread::sleep_for(100ms);
 	}
 
 }
@@ -1505,11 +1511,13 @@ void demo3()
 
 		m.redraw();
 		if (!m.check()) { break; }
+		this_thread::sleep_for(20ms);
 	}
 
 	while(m.check())
 	{
 		m.redraw();
+		this_thread::sleep_for(100ms);
 	}
 }
 
@@ -1543,10 +1551,12 @@ void demo4()
 
 		m.redraw();
 		if (!m.check()) { break; }
+		this_thread::sleep_for(20ms);
 	}
 	while(m.check())
 	{
 		m.redraw();
+		this_thread::sleep_for(100ms);
 	}
 }
 
@@ -1562,11 +1572,13 @@ void demo5()
 		m.plot(float(x), 0.1f*x*sin(0.1f*x));
 		m.redraw();
 		if (!m.check()) { break; }
+		this_thread::sleep_for(20ms);
 	}
 
 	while(m.check())
 	{
 		m.redraw();
+		this_thread::sleep_for(100ms);
 	}
 }
 
@@ -1586,6 +1598,7 @@ void demo6()
 	while(mp.check())
 	{
 		mp.redraw();
+		this_thread::sleep_for(100ms);
 	}
 }
 
@@ -1600,8 +1613,13 @@ void demo7()
 		m.plot(float(x), 0.1f*x*sin(0.1f*x));
 		m.redraw();
 		if (!m.check()) { break; }
+		this_thread::sleep_for(20ms);
 	}
-	while (m.check()) { m.redraw(); }
+	while (m.check())
+	{ 
+		m.redraw();
+		this_thread::sleep_for(100ms);
+	}
 }
 
 
