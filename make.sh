@@ -1,0 +1,1 @@
+g++ -std=c++14 test_multiplot.cpp -lfltk -lfltk_gl -lGL

@@ -50,5 +50,5 @@ sudo apt-get install libfltk1.3-dev
 ```
 ## compile
 ```console
-g++ test_multiplot.cpp -lfltk -lfltk_gl -lGL
+g++ -std=c++14 test_multiplot.cpp -lfltk -lfltk_gl -lGL
 ```
