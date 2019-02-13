@@ -1,6 +1,8 @@
 #define __TEST_THIS_MODULE__
 
-// #define MULTIPLOT_FLTK
+#ifndef _WIN32
+#define MULTIPLOT_FLTK
+#endif
 
 #include "multiplot.h"
 
