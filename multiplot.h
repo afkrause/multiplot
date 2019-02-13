@@ -1,7 +1,7 @@
 #pragma once
 /*
  * multiplot.h
- * Copyright 2002-2016 by Andre Frank Krause.
+ * Copyright 2002-2019 by Andre Frank Krause.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
