@@ -46,7 +46,7 @@ sudo dnf install fltk-devel
 ```
 ### Debian based Linux (Ubuntu, Linux Mint etc.):
 ```console
-sudo apt-get install fltk-devel
+sudo apt-get install libfltk1.3-dev
 ```
 ## compile
 ```console
