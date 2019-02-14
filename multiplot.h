@@ -119,6 +119,7 @@ CHANGELOG
 #endif
 
 
+#include <exception>
 #include <iostream>
 #include <string>
 #include <float.h>
@@ -389,7 +390,7 @@ protected:
 
 		if (!RegisterClass(&wc))									// Attempt To Register The Window Class
 		{
-			throw(std::exception("Failed To Register The Window Class."));
+			throw std::exception("Failed To Register The Window Class.");
 		}
 
 		if (fullscreen)												// Attempt Fullscreen Mode?
@@ -441,7 +442,7 @@ protected:
 			this)))								// Dont Pass Anything To WM_CREATE
 		{
 			//KillGLWindow();								// Reset The Display
-			throw(std::exception("Window Creation Error."));
+			throw std::exception("Window Creation Error.");
 		}
 
 		static	PIXELFORMATDESCRIPTOR pfd=				// pfd Tells Windows How We Want Things To Be
@@ -469,7 +470,7 @@ protected:
 		if (!(hDC=GetDC(hWnd)))							// Did We Get A Device Context?
 		{
 			//KillGLWindow();								// Reset The Display
-			throw(std::exception("Can't Create A GL Device Context."));
+			throw std::exception("Can't Create A GL Device Context.");
 		}
 
 		if (!(PixelFormat=ChoosePixelFormat(hDC,&pfd)))	// Did Windows Find A Matching Pixel Format?
@@ -1020,7 +1021,7 @@ public:
 		*/
 		template<class T> void plot(const std::vector<T>& vx, const std::vector<T>& vy)
 		{
-			if (vx.size() != vy.size()) { throw(exception("Multiplot: both vectors must have the same length.\n")); }
+			if (vx.size() != vy.size()) { throw std::length_error("Multiplot: both vectors must have the same length.\n"); }
 			for (size_t i = 0; i<vx.size(); i++)
 			{
 				traces[cur_trace].plot(float(vx[i]), float(vy[i]));
