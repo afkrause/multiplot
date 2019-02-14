@@ -46,7 +46,50 @@ sudo dnf install fltk-devel
 ```console
 sudo apt-get install libfltk1.3-dev
 ```
-## compile
+## Compile
 ```console
 g++ -std=c++14 test_multiplot.cpp -lfltk -lfltk_gl -lGL
 ```
+
+## Documentation
+### creating a new figure / window
+Create a new plotting window at position (x,y) and with size (width, height):
+```cpp
+int x = 150, y = 50;
+int w = 640, h = 480;
+Multiplot m(x,y,w,h);
+```
+
+### adding datapoints to a plot
+You can add individual points to a graph:
+```cpp
+for(int x = 0; x<100; x++)
+{
+	m.plot(x, sin(0.1*x);
+	m.redraw();
+}
+```
+redraw() refreshes the graph and draws it to the window. You can consider speeding up the process by e.g. redrawing only every tenth or hundreth frame: if(x % 100){m.redraw();}. Or you can slow down the process by sleeping for a specified amount of milliseconds: m.sleep(100) sleeps for 100ms. 
+
+### using data stored in std::vector(s)
+
+```cpp
+auto vy = vector<float>{0, 1, -1, 2, -2, 3, -3};
+m.plot(vy);
+m.redraw();
+```
+x-values run from 0 .. size(vy).
+You can also store x and y values in two vectors and plot those values: 
+
+```cpp
+vector<float> vx, vy;
+vx.resize(100); vy.resize(100);
+for(int i = 0; i<100; i++)
+{
+	vx[i] = sin(0.1*i);
+	vy[i] = sin(0.3*i);
+}
+m.plot(vx, vy);
+m.redraw();
+```
+
