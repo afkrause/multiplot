@@ -24,15 +24,13 @@ using namespace multiplot;
 void main()
 {
 	// create a multiplot Window at position (x,y)=(50,50) and width=640, height=480
-	Multiplot m(50, 50, 640, 480);	
-	m.show(); 
+	Multiplot m(50, 50, 640, 480);
 
-	// and plot a sine wave
-	for(int x=0; x<10000; x++)
+	for (int x = 0; x<200; x++)
 	{
-		m.plot(x, sin(0.1 * x) );
-		m.redraw();
-		m.check(); // event propagation
+		m.plot(x, sin(0.1 * x)); // plot an animated sine wave
+		m.redraw();		// redraw the curve
+		m.sleep(20); 	// sleep for 20 ms
 	}
 }
 ```

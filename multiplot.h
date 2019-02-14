@@ -129,6 +129,8 @@ CHANGELOG
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <thread>
+#include <chrono>
 #include <locale>	// to convert wstring to string
 #include <codecvt>	// to convert wstring to string
 
@@ -190,7 +192,7 @@ class Multiplot_base : public Fl_Gl_Window
 protected:
 	unsigned int width = 0;
 	unsigned int height = 0;
-	std::string caption;
+	std::string caption_str;
 public:
 	/**
 	*	this constructor tells multiplot where to put the window on the 
@@ -201,7 +203,7 @@ public:
 		  width = w;
 		  height = h;
 		  resizable(*this);
-		  set_caption(title_);
+		  caption(title_);
 		  if(fullscreen_)
 			  fullscreen();
 	  }
@@ -221,17 +223,23 @@ public:
 		 // Fl_Gl_Window::draw();
 	  }
 
-	  void set_caption(const std::string& t)
+	  void caption(const std::string& t)
 	  {
-		  caption = t;
-		  this->label(caption.c_str());
+		  caption_str = t;
+		  this->label(caption_str.c_str());
 	  }
-	  void set_caption(const std::wstring& t)
+	  void caption(const std::wstring& t)
 	  {
 		  //setup converter
 		  using convert_type = std::codecvt_utf8<wchar_t>;
-		  caption = std::wstring_convert<convert_type, wchar_t>().to_bytes(t);
-		  this->label(caption.c_str());
+		  caption_str = std::wstring_convert<convert_type, wchar_t>().to_bytes(t);
+		  this->label(caption_str.c_str());
+	  }
+
+	  void redraw()
+	  {
+		  check();
+		  Fl_Gl_Window::redraw();
 	  }
 
 }; 
@@ -661,7 +669,7 @@ public:
 	{
 	}
 
-	void set_caption(const std::wstring& t)
+	void caption(const std::wstring& t)
 	{
 		// TODO
 	}
@@ -686,6 +694,15 @@ public:
 class Multiplot : public Multiplot_base
 {
 protected:
+	class Color3f
+	{
+	public:
+		float r = 0.0f;
+		float g = 0.0f;
+		float b = 0.0f;
+		Color3f(float r_, float g_, float b_) { r = r_; g = g_; b = b_; }
+	};
+
 	class Point2d
 	{
 	public:
@@ -720,12 +737,12 @@ public:
 		class Trace : public std::vector<Point2d>
 		{
 		public:
-			unsigned int max_points;
-			bool scroll;
-			unsigned int pos; // current position in the ringbuffer
-			float cur_col[3];
-			float cur_line_width;
-			float cur_point_size;
+			unsigned int max_points_to_plot = 10000; //std::max(w,h); <- setting max_points that low gives problems with scatter plots
+			bool scroll = false;
+			unsigned int pos = 0; // current position in the ringbuffer
+			float cur_col[3]{ 1.0f, 1.0f, 1.0f };
+			float cur_line_width = 1.0f;
+			float cur_point_size = 0.0f;
 			void draw(Point2d& minimum, Point2d& maximum, Point2d& scale, Point2d& offset)
 			{
 				if(size()==0)return;
@@ -848,15 +865,6 @@ public:
 			}
 
 		public:
-			Trace()
-			{
-				cur_col[0]=cur_col[1]=cur_col[2]=1.0;
-				cur_line_width=1.0;
-				cur_point_size=0.0;
-				scroll=false;
-				pos=0;
-				max_points=10000;//std::max(w,h); <- setting max_points that low gives problems with scatter plots
-			}
 
 			/**
 			*	plot a point at (x,y) to the currently active trace. 
@@ -875,7 +883,7 @@ public:
 						push_back(p);
 					pos++;
 
-					if(pos>=max_points)
+					if(pos>=max_points_to_plot)
 						pos=0;
 				}
 				else
@@ -897,18 +905,18 @@ public:
 			}
 
 			/**
-			*	call set_linewidth to change the thickness of the traces. the default
+			*	call linewidth to change the thickness of the traces. the default
 			*	value is 1 pixel, if you set the linewidth to zero, no lines are drawn. this
 			*	is usefull to create scatter-plots.
 			*/
-			void set_linewidth(float width){ cur_line_width=width; }
+			void linewidth(float width){ cur_line_width=width; }
 
 			/**
 			*	this function sets the size of the plot-points. the default value is zero, so 
 			*	no points are drawn at all. if you wish to create a scatter-plot, set the pointsize
 			*  to a value bigger than zero and the linesize to zero.
 			*/
-			void set_pointsize(float psize){ cur_point_size = psize; }
+			void pointsize(float psize){ cur_point_size = psize; }
 
 
 			/**
@@ -916,14 +924,14 @@ public:
 			*	avoid slow drawing of your trace. if you have 1000 plot-points and 
 			*	set the number of max_points to 100, then only every tenth point gets plotted.
 			*/
-			void set_max_points(int mx){ max_points=mx;}
+			void max_points(int mx) { max_points_to_plot = mx; }
 
 			/**
-			*	if you call set_scrolling with a positive number of points to be plotted,
+			*	if you call scrolling with a positive number of points to be plotted,
 			*	your graph will scroll left out of the plot-window as you add new plot-points.
 			*	Zero or a negative number disables scrolling.
 			*/
-			void set_scrolling(int max_points_to_plot)
+			void scrolling(int max_points_to_plot_)
 			{
 				if(max_points_to_plot<=0)
 				{
@@ -932,7 +940,7 @@ public:
 				}
 
 				scroll=true;
-				max_points=max_points_to_plot;
+				max_points_to_plot = max_points_to_plot;
 				//if(traces[cur_trace].capacity()<max_points)
 				//	traces[cur_trace].reserve(max_points);
 
@@ -950,35 +958,11 @@ public:
 		virtual ~Multiplot() {}
         // warning: unused parameter 'x'
         // warning: unused parameter 'y'
-		Multiplot(const int x,const int y,const int w,const int h, const std::wstring& ttitle=L"www.andre-krause.net/multiplot", bool fullscreen=false) : Multiplot_base(x,y,w,h,ttitle,fullscreen)
+		Multiplot(const int x,const int y,const int w,const int h, const std::wstring& title_str_=L"www.andre-krause.net/multiplot", bool fullscreen=false) : Multiplot_base(x,y,w,h, title_str_,fullscreen)
 		{
-			cur_point_size=0.0;
-			cur_trace=0;
-			
-			title=ttitle;
-			
-			// auto scaling vars
-			scaling_ = MP_AUTO_SCALE;
-			maximum.x=maximum.y=-FLT_MAX;
-			minimum.x=minimum.y=FLT_MAX;
-			Point2d range_min, range_max;
-			
+			title_str = title_str_;
 			traces.push_back( Trace() ); // create one trace
-
-			gridx=MP_NO_GRID;
-			gridy=MP_NO_GRID;
-			gridx_step=-1;
-			gridy_step=-1;
-
-			bg_color.r=0.0f;
-			bg_color.g=0.0f;
-			bg_color.b=0.0f;
-
-			grid_color.r=0.8f;
-			grid_color.g=0.8f;
-			grid_color.b=0.8f;
-			grid_linewidth=1.0f;
-
+			show();
 		}
 
 		
@@ -1027,27 +1011,46 @@ public:
 		}
 
 		/**
+		* plots the values of vector vx and vy to the currently active trace.
+		* vx and vy must have the same length. 
+		* select a trace with a call to trace(int _tracenumber);
+		*/
+		template<class T> void plot(const std::vector<T>& vx, const std::vector<T>& vy)
+		{
+			if (vx.size() != vy.size()) { throw(exception("Multiplot: both vectors must have the same length.\n")); }
+			for (size_t i = 0; i<vx.size(); i++)
+			{
+				traces[cur_trace].plot(float(vx[i]), float(vy[i]));
+			}
+		}
+
+		/**
 		* change current drawing color for current trace.
 		*/
 		void color3f(float r, float g, float b) { traces[cur_trace].color3f(r,g,b); }
 		
 		/**
-		* sets the window title.
+		* sets the window title given a wide string.
 		*/
-		void set_title(const std::wstring& title_){ title=title_; }
+		void title(const std::wstring& title_) { title_str = title_; }
+
+		/**
+		* sets the window title given a string or char*.
+		*/
+		void title(const std::string&  title_) { title_str = std::wstring(title_.begin(), title_.end()); }
 		
 		/**
 		* changes current line width.
 		*/
-		void set_linewidth(float width){ traces[cur_trace].set_linewidth(width); }
+		void linewidth(float width){ traces[cur_trace].linewidth(width); }
 		/**
 		* changes current point size.
 		*/
-		void set_pointsize(float psize){ traces[cur_trace].set_pointsize(psize); }
+		void pointsize(float psize){ traces[cur_trace].pointsize(psize); }
 		/**
 		* changes scrolling behaviour for current trace - see class Trace for details.
 		*/
-		void set_scrolling(int max_points_to_plot){ traces[cur_trace].set_scrolling(max_points_to_plot); }
+		void scrolling(int max_points_to_plot){ traces[cur_trace].scrolling(max_points_to_plot); }
 
 		/**
 		* changes the (auto-)scaling behaviour of the multiplot window. you can choose between 
@@ -1055,13 +1058,25 @@ public:
 		* MP_AUTO_SCALE_EQUAL
 		* MP_FIXED_SCALE
 		*/
-		void set_scaling(enum MP_SCALING sc, float x_min=-10, float x_max= 10, float y_min=-10, float y_max=10)
+		void scaling(enum MP_SCALING sc, float x_min=-10, float x_max= 10, float y_min=-10, float y_max=10)
 		{
 			scaling_ = sc;
 			range_min.x = x_min;
 			range_min.y = y_min;
 			range_max.x = x_max;
 			range_max.y = y_max;
+		}
+
+
+
+		/**
+		* sleeps for the given amount of milliseconds
+		* useful to control the speed of animated graphs.
+		*/
+		void sleep(unsigned int milliseconds_)
+		{
+			using namespace std;
+			this_thread::sleep_for(chrono::milliseconds(milliseconds_));
 		}
 
 		
@@ -1073,7 +1088,7 @@ public:
 		 *	Zero or a negative value like -1 enables auto - spacing.
 		 *	The last parameter w sets the grid-linewidth. the default is 1 pixel.
 		 */
-		void set_grid(enum MP_GRIDSTYLE ggridx=MP_LINEAR_GRID, enum MP_GRIDSTYLE ggridy=MP_LINEAR_GRID, float ggridx_step=-1.0, float ggridy_step=-1.0, float w=1.0)
+		void grid(enum MP_GRIDSTYLE ggridx=MP_LINEAR_GRID, enum MP_GRIDSTYLE ggridy=MP_LINEAR_GRID, float ggridx_step=-1.0, float ggridy_step=-1.0, float w=1.0)
 		{
 			gridx=ggridx;
 			gridy=ggridy;
@@ -1085,23 +1100,23 @@ public:
 		/**
 		*	sets the background color
 		*/
-		void set_bg_color(float r, float g, float b)
+		void bg_color(float r, float g, float b)
 		{
-			bg_color.r=r;
-			bg_color.g=g;
-			bg_color.b=b;
-			glClearColor(bg_color.r, bg_color.g, bg_color.b, 1);		// Set The background color
+			bg_col.r=r;
+			bg_col.g=g;
+			bg_col.b=b;
+			glClearColor(bg_col.r, bg_col.g, bg_col.b, 1);		// Set The background color
 		}
 
 
 		/**
 		*	sets the grid color
 		*/
-		void set_grid_color(float r, float g, float b)
+		void grid_color(float r, float g, float b)
 		{
-			grid_color.r=r;
-			grid_color.g=g;
-			grid_color.b=b;
+			grid_col.r=r;
+			grid_col.g=g;
+			grid_col.b=b;
 		}
 
 
@@ -1120,17 +1135,21 @@ public:
 		*/
 		void clear(int trace) { traces[trace].clear(); traces[trace].pos=0; }
 	protected:
-		float cur_point_size;
-		unsigned int cur_trace;
-		std::wstring title;		// stores the user-title, so we can add ranges
+		float cur_point_size = 0.0f;
+		unsigned int cur_trace = 0;
+
+		std::wstring title_str;		// stores the user-title, so we can add ranges
 		std::wstring caption_str;
-		Point2d bg_color;
-		Point2d grid_color;
+		Color3f bg_col  { 0.0f, 0.0f, 0.0f };
+		Color3f grid_col{ 0.8f, 0.8f, 0.8f };
+		
+
 
 		// scaling behaviour
-		int scaling_;
+		MP_SCALING scaling_ = MP_AUTO_SCALE;
 		Point2d range_min, range_max;
-		Point2d minimum, maximum;
+		Point2d minimum{ -FLT_MAX ,-FLT_MAX };
+		Point2d maximum{  FLT_MAX , FLT_MAX };
 		Point2d scale;
 		Point2d offset;
 
@@ -1138,9 +1157,11 @@ public:
 		std::vector< Trace > traces;
 
 		// grid - vars
-		int gridx;
-		int gridy;
-		float gridx_step, gridy_step, grid_linewidth;		
+		int gridx = MP_NO_GRID;
+		int gridy = MP_NO_GRID;
+		float gridx_step = -1;
+		float gridy_step = -1;
+		float grid_linewidth = 1.0f;
 		Point2d grid_spacing;
 
 		void initgl()
@@ -1155,7 +1176,7 @@ public:
 			glDisable(GL_DEPTH_TEST);									// Enable Depth Testing
 			glDisable(GL_LIGHTING);
 			glShadeModel(GL_SMOOTH);									// Select Smooth Shading
-			glClearColor(bg_color.r, bg_color.g, bg_color.b, 1);		// Set The background color
+			glClearColor(bg_col.r, bg_col.g, bg_col.b, 1);		// Set The background color
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);			// Clear The Screen And Depth Buffer
 		}	
 
@@ -1192,7 +1213,7 @@ public:
 				double x=startx;
 
 				glLineWidth(grid_linewidth);
-				glColor3f(grid_color.r, grid_color.g, grid_color.b);
+				glColor3f(grid_col.r, grid_col.g, grid_col.b);
 				glBegin(GL_LINES);
 				int bailout=0; // bailout is a safety to avoid endless recursions caused maybe through numerical errors..
 				while(x<maximum.x && bailout<100)
@@ -1232,7 +1253,7 @@ public:
 				}
 				double y=starty;
 				glLineWidth(1.0);
-				glColor3f(grid_color.r, grid_color.g, grid_color.b);
+				glColor3f(grid_col.r, grid_col.g, grid_col.b);
 				glBegin(GL_LINES);
 				int bailout=0; // bailout is a safety to avoid endless recursions caused maybe through numerical errors..
 				while(y<maximum.y && bailout<100)
@@ -1294,7 +1315,7 @@ public:
 
 			// draw the coordinate cross with center (0,0)
 			glLineWidth(2.0f*grid_linewidth);
-			glColor3f(grid_color.r, grid_color.g, grid_color.b);
+			glColor3f(grid_col.r, grid_col.g, grid_col.b);
 			glBegin(GL_LINES);
 			glVertex2f(0.0f					,0-offset.y*scale.y);
 			glVertex2f((float)width			,0-offset.y*scale.y);
@@ -1343,15 +1364,16 @@ public:
 
 
 			// possible performance issue?
-			caption_str  = L"x=[" + to_wstring(minimum.x) + L", " + to_wstring(maximum.x) + L"] ";
+			caption_str  = title_str + L" ";
+			caption_str += L"x=[" + to_wstring(minimum.x) + L", " + to_wstring(maximum.x) + L"] ";
 			caption_str += L"y=[" + to_wstring(minimum.y) + L", " + to_wstring(maximum.y) + L"] ";
 			if(gridx != MP_NO_GRID || gridy != MP_NO_GRID)
 			{
 				caption_str += L"dx=[" + to_wstring(grid_spacing.x) + L"] ";
 				caption_str += L"dy=[" + to_wstring(grid_spacing.y) + L"] ";
 			}
-			caption_str += title;
-			set_caption(caption_str.c_str() );
+			
+			caption(caption_str.c_str() );
 		}
 };
 
@@ -1364,13 +1386,9 @@ public:
 
 #include <vector>
 #include <iostream>
-#include <thread>
-#include <chrono>
-
 #include <math.h>
 
 using namespace std; 
-using namespace chrono;
 using namespace multiplot;
 
 // These are  compiler directives that includes libraries (For Visual Studio)
@@ -1429,14 +1447,14 @@ void demo1()
 		m.redraw();
 		// force event propagation thus redrawing
 		if (!m.check()) { break; }
-		this_thread::sleep_for(20ms);
+		m.sleep(20);
 	}
 
 	// wait till window is closed by user
 	while(m.check())
 	{
 		m.redraw();
-		this_thread::sleep_for(100ms);
+		m.sleep(100);
 	}
 
 }
@@ -1450,14 +1468,14 @@ void demo2()
 	Multiplot m(10,10,600,300);
 
 	// draw a linear spaced grid for x and y-axis
-	m.set_grid(MP_LINEAR_GRID,MP_LINEAR_GRID);		
+	m.grid(MP_LINEAR_GRID,MP_LINEAR_GRID);		
 
 	// set background color
-	m.set_bg_color(0,0,0.5);
+	m.bg_color(0,0,0.5);
 
 	// enable scrolling for both traces:
-	m[0].set_scrolling(100);		// the last  100 added points of the plot will be drawn 
-	m[1].set_scrolling(100);		// the last  100 added points of the plot will be drawn 
+	m[0].scrolling(100);		// the last  100 added points of the plot will be drawn 
+	m[1].scrolling(100);		// the last  100 added points of the plot will be drawn 
 
 	m.show();
 
@@ -1476,13 +1494,13 @@ void demo2()
 
 		m.redraw();
 		if (!m.check()) { break; }
-		this_thread::sleep_for(20ms);
+		m.sleep(20);
 	}
 
 	while(m.check())
 	{
 		m.redraw();
-		this_thread::sleep_for(100ms);
+		m.sleep(100);
 	}
 
 }
@@ -1493,11 +1511,11 @@ void demo3()
 {
 	Multiplot m(10,10,600,600);
 
-	m.set_grid(MP_LINEAR_GRID, MP_LOG_GRID);
+	m.grid(MP_LINEAR_GRID, MP_LOG_GRID);
 
-	m.set_scrolling(100);		// the last  50 added points of the plot will be drawn 
-	m.set_linewidth(2);	// first trace has line-width of 2	
-	m.set_pointsize(4);		// set the point size of the first trace to 4
+	m.scrolling(100);		// the last  50 added points of the plot will be drawn 
+	m.linewidth(2);	// first trace has line-width of 2	
+	m.pointsize(4);		// set the point size of the first trace to 4
 
 	m.show();
 
@@ -1506,7 +1524,7 @@ void demo3()
 	{
 		// instead of calling m.trace(0), you may also 
 		// use the brackets operator to access individual traces
-		m[0].set_pointsize(4.0f + (x%10));
+		m[0].pointsize(4.0f + (x%10));
 		m[0].color3f(1, 0.01f*(x%100), 0.05f*(x%20) );
 		m[0].plot(0.1f*x*cos(x/5.0f), 0.1f*x*sin(x/5.0f));
 
@@ -1515,13 +1533,13 @@ void demo3()
 
 		m.redraw();
 		if (!m.check()) { break; }
-		this_thread::sleep_for(20ms);
+		m.sleep(20);
 	}
 
 	while(m.check())
 	{
 		m.redraw();
-		this_thread::sleep_for(100ms);
+		m.sleep(100);
 	}
 }
 
@@ -1531,7 +1549,7 @@ void demo4()
 	Multiplot m(10,10,600,600);
 	m.show();
 
-	m.set_linewidth(0.0); // disable lines by setting line width to zero
+	m.linewidth(0.0); // disable lines by setting line width to zero
 
 	for(int x=0;x<3000;x++)
 	{
@@ -1548,19 +1566,19 @@ void demo4()
 			float gval = exp(-(rx*rx + ry*ry));
 			if(1.0*rand()/RAND_MAX < gval)
 			{
-				m.set_pointsize(1 + 5*gval);
+				m.pointsize(1 + 5*gval);
 				m.plot(rx, ry);
 			}
 		}
 
 		m.redraw();
 		if (!m.check()) { break; }
-		this_thread::sleep_for(20ms);
+		m.sleep(20);
 	}
 	while(m.check())
 	{
 		m.redraw();
-		this_thread::sleep_for(100ms);
+		m.sleep(100);
 	}
 }
 
@@ -1576,40 +1594,53 @@ void demo5()
 		m.plot(float(x), 0.1f*x*sin(0.1f*x));
 		m.redraw();
 		if (!m.check()) { break; }
-		this_thread::sleep_for(20ms);
+		m.sleep(20);
 	}
 
 	while(m.check())
 	{
 		m.redraw();
-		this_thread::sleep_for(100ms);
+		m.sleep(100);
 	}
 }
 
 void demo6()
 {
-	vector<float> v1,v2;
+	vector<float> v1,v2, vx, vy;
 	for(int a=0;a<100;a++)
 	{
 		v1.push_back( sin(0.3f*a) );
 		v2.push_back( cos(0.3f*a)+2.5f );
+
+		// Lissajous Figure
+		vx.push_back(50 + 40 * sin(0.10f*a));
+		vy.push_back( 5 +  1 * cos(0.30f*a));
 	}
+
 	Multiplot mp(20,20,500,500);
 	mp.show();
 	mp.plot(v1);
+	
 	mp.trace(1);
 	mp.plot(v2);
+	
+	// 
+	mp.trace(2);
+	mp.linewidth(4);
+	mp.color3f(0, 1, 1);
+	mp.plot(vx, vy);
+
 	while(mp.check())
 	{
 		mp.redraw();
-		this_thread::sleep_for(100ms);
+		mp.sleep(100);
 	}
 }
 
 void demo7()
 {
 	Multiplot m(10, 10, 600, 300);
-	m.set_scaling(MP_FIXED_SCALE, 0, 300, -20, 20);
+	m.scaling(MP_FIXED_SCALE, 0, 300, -20, 20);
 	m.show();
 
 	for (int x = 0; x < 300; x++)
@@ -1617,12 +1648,12 @@ void demo7()
 		m.plot(float(x), 0.1f*x*sin(0.1f*x));
 		m.redraw();
 		if (!m.check()) { break; }
-		this_thread::sleep_for(20ms);
+		m.sleep(20);
 	}
 	while (m.check())
 	{ 
 		m.redraw();
-		this_thread::sleep_for(100ms);
+		m.sleep(100);
 	}
 }
 
@@ -1634,8 +1665,10 @@ void demo8()
 	#endif
 
 	Multiplot m1(20,  20, 600, 300);
-	Multiplot m2(20, 320, 600, 300);
+	Multiplot m2(20, 380, 600, 300);
 	
+	m1.title("Plot Window 1: ");
+	m2.title("Plot Window 2: ");
 	
 	m1.show();
 	m2.show();
@@ -1647,14 +1680,14 @@ void demo8()
 		m1.redraw();
 		m2.redraw();
 		if (!m1.check()) { break; }
-		this_thread::sleep_for(20ms);
+		m1.sleep(20);
 	}
 
 	while (m1.check())
 	{
 		m1.redraw();
 		m2.redraw();
-		this_thread::sleep_for(100ms);
+		m1.sleep(100);
 	}
 }
 
