@@ -78,8 +78,8 @@ auto vy = vector<float>{0, 1, -1, 2, -2, 3, -3};
 m.plot(vy);
 m.redraw();
 ```
-x-values run from 0 .. size(vy).
-You can also store x and y values in two vectors and plot those values: 
+x-values run from 0 .. size(vy)-1.
+You can also store x and y values in two separate vectors and plot those values: 
 
 ```cpp
 vector<float> vx, vy;
@@ -92,4 +92,13 @@ for(int i = 0; i<100; i++)
 m.plot(vx, vy);
 m.redraw();
 ```
+### window management
+To keep a plot window open and to keep that window responsive to events like changing the window size, you need to keep the events flowing by repeatedly calling m.check():
 
+```cpp
+while(m.check())
+{
+	m.sleep(100);
+}
+```
+If ESC is pressed, the while loop will exit.
