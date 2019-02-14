@@ -109,15 +109,13 @@ CHANGELOG
 	- initial release
 */
 
-
-#if defined(MULTIPLOT_FLTK) || defined(MULTIPLOT_WIN32) 
-#else
-	#ifdef Fl_Object
-		#define MULTIPLOT_FLTK
-	#else
-		#define MULTIPLOT_WIN32		
-		//#pragma(warning, "Please define either MULTIPLOT_FLTK or MULTIPLOT_WIN32 before including multiplot.h .")
+// currently, fltk is the only backend for linux. so we can safely activate it if we are not running under _win32
+#ifdef _WIN32
+	#ifndef MULTIPLOT_FLTK
+	#define MULTIPLOT_WIN32
 	#endif
+#else
+	#define MULTIPLOT_FLTK
 #endif
 
 
@@ -209,8 +207,8 @@ public:
 	  }
 
 	  bool check()
-	  {
-		  return (bool)Fl::check();
+	  { 
+		  if (Fl::check()) { return true; } else return false; 
 	  }
 
 	  virtual void draw() override
@@ -257,6 +255,7 @@ protected:
 
 	unsigned int width; // window - width
 	unsigned int height; // window - height
+	std::wstring title_str;
 	bool valid_;
 
 	bool active;
@@ -265,6 +264,7 @@ protected:
 	HGLRC		hRC;		// Permanent Rendering Context
 	HWND		hWnd;		// Holds Our Window Handle
 	HINSTANCE	hInstance;	// Holds The Instance Of The Application
+	
 
 	static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
@@ -372,6 +372,7 @@ protected:
 		WindowRect.bottom=(long)height;		// Set Bottom Value To Requested Height
 
 		fullscreen=fullscreenflag;			// Set The Global Fullscreen Flag
+		title_str = title;
 
 		hInstance			= GetModuleHandle(NULL);				// Grab An Instance For Our Window
 		wc.style			= CS_HREDRAW | CS_VREDRAW | CS_OWNDC;	// Redraw On Size, And Own DC For Window.
@@ -427,7 +428,7 @@ protected:
 		// Create The Window
 		if (!(hWnd=CreateWindowEx(	dwExStyle,	// Extended Style For The Window
 			L"OpenGL",							// Class Name
-			title.c_str(),							// Window Title
+			title_str.c_str(),							// Window Title
 			dwStyle |							// Defined Window Style
 			WS_CLIPSIBLINGS |					// Required Window Style
 			WS_CLIPCHILDREN,					// Required Window Style
@@ -640,13 +641,16 @@ public:
 	{
 	}
 
+	/**
+	*	propagate window events
+	*	returns false if ESC was pressed, true otherwise
+	*/
 	bool check()
 	{
 		MSG msg;
 		bool ok=true;
 
-		if(GetAsyncKeyState(VK_ESCAPE) & 0x8000)
-			ok=false;
+		if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) { ok = false; }
 
 		// now, check any messages, so win32 is happy
 		if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))//GetMessage( &msg, NULL, 0, 0 ) )
@@ -654,8 +658,6 @@ public:
 			TranslateMessage(&msg); 
 			DispatchMessage(&msg); 
 		}
-		//else
-		//	ok=false;
 
 		return ok;
 	}
@@ -671,7 +673,8 @@ public:
 
 	void caption(const std::wstring& t)
 	{
-		// TODO
+		title_str = t;
+		SetWindowText(hWnd, title_str.c_str());
 	}
 
 	/**

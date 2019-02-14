@@ -1,11 +1,9 @@
 #define __TEST_THIS_MODULE__
 
-#define MULTIPLOT_FLTK
-#ifndef _WIN32
-#define MULTIPLOT_FLTK
-#endif
 
 #include "multiplot.h"
+using namespace multiplot;
+
 
 int main()
 {
@@ -14,10 +12,10 @@ int main()
 	{
 		Multiplot m(50, 50, 640, 480);
 
-		// and plot a sine wave
 		for (int x = 0; x<200; x++)
 		{
-			m.plot(x, sin(0.1 * x));
+			// plot a sine wave
+			m.plot(float(x), sin(0.1f * x));
 			m.redraw();
 			m.sleep(20);
 		}
