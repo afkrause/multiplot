@@ -65,11 +65,24 @@ You can add individual points to a graph:
 ```cpp
 for(int x = 0; x<100; x++)
 {
-	m.plot(x, sin(0.1*x);
+	m.plot( x, sin(0.1*x) );
 	m.redraw();
 }
 ```
 redraw() refreshes the graph and draws it to the window. You can consider speeding up the process by e.g. redrawing only every tenth or hundreth frame: if(x % 100){m.redraw();}. Or you can slow down the process by sleeping for a specified amount of milliseconds: m.sleep(100) sleeps for 100ms. 
+
+### window management
+To keep a plot window open and to keep that window responsive to events like changing the window size, you need to keep the events flowing by repeatedly calling m.check():
+
+```cpp
+while(m.check())
+{
+	m.redraw();
+	m.sleep(100);
+}
+```
+If ESC is pressed, the while loop will exit.
+
 
 ### using data stored in std::vector(s)
 
@@ -92,14 +105,37 @@ for(int i = 0; i<100; i++)
 m.plot(vx, vy);
 m.redraw();
 ```
-### window management
-To keep a plot window open and to keep that window responsive to events like changing the window size, you need to keep the events flowing by repeatedly calling m.check():
 
+### setting trace properties (color, linewidth, scrolling)
+set the rgb color of new data-points to be added to a trace using:
 ```cpp
-while(m.check())
+m.trace(0);
+m.color3f(1, 1, 0);
+```
+you change the color for each new datapoint by setting color3d(r,g,b) before each plot(x,y). This results in a multicolored trace. 
+
+alternative syntax to set the color of trace 0:
+```cpp
+m[0].color3f(1, 1, 0);
+```
+set the linewidth with m.linewidth(). Setting linewidth to zero removes draws no lines between datapoints. Thus, setting the m.pointsize(float) to e.g. 4.0, while setting linewidth(float) to zero creates a scatter plot. 
+
+####Scrolling: If you have a continous inflow of datapoints you wish to visualize (e.g. some sensor data), you can use scrolling(int max_points_to_plot). Internally, this implements a ringbuffer. New datapoints will appear at the end of the trace, while old data-points seem to disappear at the beginning of the trace. 
+```cpp
+m.scrolling(100);
+for (int x = 0; x<500; x++)
 {
+	m.plot(x, sin(0.1*x));
 	m.redraw();
-	m.sleep(100);
+	m.sleep(20);
 }
 ```
-If ESC is pressed, the while loop will exit.
+
+
+### clearing data
+you can remove previously drawn traces either by completely resetting a plot window with clear_all() or by individually clearing traces with clear(int trace_number);
+```cpp
+m.clear_all(); // clear all traces
+m.clear(2); // clear trace no. 2
+```
+
