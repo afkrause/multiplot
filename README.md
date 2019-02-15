@@ -44,6 +44,7 @@ sudo dnf install fltk-devel
 ```
 ### Debian based Linux (Ubuntu, Linux Mint etc.):
 ```console
+sudo apt-get install libglu1-mesa-dev mesa-common-dev 
 sudo apt-get install libfltk1.3-dev
 ```
 ## Compile

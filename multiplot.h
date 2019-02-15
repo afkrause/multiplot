@@ -122,7 +122,6 @@ CHANGELOG
 #include <exception>
 #include <iostream>
 #include <string>
-#include <float.h>
 #include <time.h>
 #include <math.h>
 #include <vector>
@@ -130,6 +129,7 @@ CHANGELOG
 #include <algorithm>
 #include <thread>
 #include <chrono>
+#include <limits>
 #include <locale>	// to convert wstring to string
 #include <codecvt>	// to convert wstring to string
 
@@ -741,7 +741,7 @@ public:
 		class Trace : public std::vector<Point2d>
 		{
 		public:
-			unsigned int max_points_to_plot = INT_MAX;
+			unsigned int max_points_to_plot = std::numeric_limits<unsigned int>::max();
 			bool scroll = false;
 			unsigned int pos = 0; // current position in the ringbuffer
 			float cur_col[3]{ 1.0f, 1.0f, 1.0f };
@@ -1108,8 +1108,8 @@ public:
 		// scaling behaviour
 		MP_SCALING scaling_ = MP_AUTO_SCALE;
 		Point2d range_min, range_max;
-		Point2d minimum{ -FLT_MAX ,-FLT_MAX };
-		Point2d maximum{  FLT_MAX , FLT_MAX };
+		Point2d minimum{ -std::numeric_limits<float>::max() , -std::numeric_limits<float>::max() };
+		Point2d maximum{  std::numeric_limits<float>::max() ,  std::numeric_limits<float>::max() };
 		Point2d scale;
 		Point2d offset;
 
@@ -1285,8 +1285,8 @@ public:
 
 
 			
-			maximum.x=maximum.y=-FLT_MAX;
-			minimum.x=minimum.y=FLT_MAX;
+			maximum.x=maximum.y= -std::numeric_limits<float>::max();
+			minimum.x=minimum.y=  std::numeric_limits<float>::max();
 
 			for(size_t t=0;t<traces.size();t++)
 			{

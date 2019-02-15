@@ -5,18 +5,18 @@
 ## Debug
 ProjectName            :=multiplot
 ConfigurationName      :=Debug
-WorkspacePath          :=/home/hrc/projects/multiplot/codelite
-ProjectPath            :=/home/hrc/projects/multiplot/codelite
+WorkspacePath          :=/home/frosch/cpp/multiplot/codelite
+ProjectPath            :=/home/frosch/cpp/multiplot/codelite
 IntermediateDirectory  :=./Debug
 OutDir                 := $(IntermediateDirectory)
 CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
-User                   :=hrc
-Date                   :=13/02/19
-CodeLitePath           :=/home/hrc/.codelite
-LinkerName             :=/usr/bin/clang++
-SharedObjectLinkerName :=/usr/bin/clang++ -shared -fPIC
+User                   :=frosch
+Date                   :=15/02/19
+CodeLitePath           :=/home/frosch/.codelite
+LinkerName             :=/usr/bin/g++
+SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
 ObjectSuffix           :=.o
 DependSuffix           :=.o.d
 PreprocessSuffix       :=.i
@@ -48,8 +48,8 @@ LibPath                := $(LibraryPathSwitch).
 ## AR, CXX, CC, AS, CXXFLAGS and CFLAGS can be overriden using an environment variables
 ##
 AR       := /usr/bin/ar rcu
-CXX      := /usr/bin/clang++
-CC       := /usr/bin/clang
+CXX      := /usr/bin/g++
+CC       := /usr/bin/gcc
 CXXFLAGS :=  -g -O0 -std=c++14 -Wall $(Preprocessors)
 CFLAGS   :=  -g -O0 -Wall $(Preprocessors)
 ASFLAGS  := 
@@ -92,7 +92,7 @@ PreBuild:
 ## Objects
 ##
 $(IntermediateDirectory)/up_test_multiplot.cpp$(ObjectSuffix): ../test_multiplot.cpp $(IntermediateDirectory)/up_test_multiplot.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/hrc/projects/multiplot/test_multiplot.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/up_test_multiplot.cpp$(ObjectSuffix) $(IncludePath)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/frosch/cpp/multiplot/test_multiplot.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/up_test_multiplot.cpp$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/up_test_multiplot.cpp$(DependSuffix): ../test_multiplot.cpp
 	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/up_test_multiplot.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/up_test_multiplot.cpp$(DependSuffix) -MM ../test_multiplot.cpp
 
