@@ -1129,15 +1129,24 @@ public:
 		 */
 		void clear_all()
 		{
-			for(unsigned int a=0;a<traces.size();a++)
+			for (unsigned int a = 0; a < traces.size(); a++)
+			{
 				traces[a].clear();
+				traces[a].pos = 0;
+			}
+			cur_trace = 0;
 		}
 
 		
 		/**
 		*	this function call clears trace number t
 		*/
-		void clear(int trace) { traces[trace].clear(); traces[trace].pos=0; }
+		void clear(int trace)
+		{
+			traces[trace].clear();
+			traces[trace].pos=0;
+		}
+
 	protected:
 		float cur_point_size = 0.0f;
 		unsigned int cur_trace = 0;
@@ -1426,6 +1435,16 @@ using namespace multiplot;
 
 
 
+// keep the window open until ESC is pressed
+// and respond to resize and other events
+void keep_alive(Multiplot& m)
+{
+	while (m.check())
+	{ 
+		m.redraw();
+		m.sleep(100);
+	}
+}
 
 
 // most simple usage of Multiplot
@@ -1439,8 +1458,6 @@ void demo1()
 	//Multiplot m(10, 10, 600, 300);
 	Multiplot m(10, 10, 512, 512);
 
-	// make it visible
-	m.show();
 
 	// and plot a nice sine wave
 	for(int x=0;x<300;x++)
@@ -1449,18 +1466,12 @@ void demo1()
 		m.plot(float(x), 0.1f*x*sin(0.1f*x));
 
 		m.redraw();
-		// force event propagation thus redrawing
+		// force event propagation and check for ESC press
 		if (!m.check()) { break; }
 		m.sleep(20);
 	}
 
-	// wait till window is closed by user
-	while(m.check())
-	{
-		m.redraw();
-		m.sleep(100);
-	}
-
+	keep_alive(m);
 }
 
 
@@ -1481,7 +1492,6 @@ void demo2()
 	m[0].scrolling(100);		// the last  100 added points of the plot will be drawn 
 	m[1].scrolling(100);		// the last  100 added points of the plot will be drawn 
 
-	m.show();
 
 
 	for(int x=0;x<300;x++)
@@ -1501,12 +1511,7 @@ void demo2()
 		m.sleep(20);
 	}
 
-	while(m.check())
-	{
-		m.redraw();
-		m.sleep(100);
-	}
-
+	keep_alive(m);
 }
 
 
@@ -1521,7 +1526,6 @@ void demo3()
 	m.linewidth(2);	// first trace has line-width of 2	
 	m.pointsize(4);		// set the point size of the first trace to 4
 
-	m.show();
 
 
 	for(int x=0;x<1000;x++)
@@ -1540,18 +1544,14 @@ void demo3()
 		m.sleep(20);
 	}
 
-	while(m.check())
-	{
-		m.redraw();
-		m.sleep(100);
-	}
+	keep_alive(m);
 }
 
 // demo4: how to do scatter-plots
 void demo4()
 {
 	Multiplot m(10,10,600,600);
-	m.show();
+	
 
 	m.linewidth(0.0); // disable lines by setting line width to zero
 
@@ -1579,11 +1579,7 @@ void demo4()
 		if (!m.check()) { break; }
 		m.sleep(20);
 	}
-	while(m.check())
-	{
-		m.redraw();
-		m.sleep(100);
-	}
+	keep_alive(m);
 }
 
 // fullscreen (win32 only)
@@ -1592,7 +1588,7 @@ void demo5()
 	// create a multiplot window
 	// last parameter says if fullscreen or not
 	Multiplot m(0, 0, 800, 600, L"", true);
-	m.show();
+	
 	for(int x=0;x<1000;x++)
 	{
 		m.plot(float(x), 0.1f*x*sin(0.1f*x));
@@ -1601,44 +1597,48 @@ void demo5()
 		m.sleep(20);
 	}
 
-	while(m.check())
-	{
-		m.redraw();
-		m.sleep(100);
-	}
+	keep_alive(m);
 }
 
 void demo6()
 {
+	Multiplot m(20, 20, 500, 500);
+
+
 	vector<float> v1,v2, vx, vy;
 	for(int a=0;a<100;a++)
 	{
 		v1.push_back( sin(0.3f*a) );
 		v2.push_back( cos(0.3f*a)+2.5f );
-
-		// Lissajous Figure
-		vx.push_back(50 + 40 * sin(0.10f*a));
-		vy.push_back( 5 +  1 * cos(0.30f*a));
 	}
+	m.plot(v1);	
+	m.trace(1);
+	m.plot(v2);
+	m.redraw();
+	m.sleep(1000);
 
-	Multiplot mp(20,20,500,500);
-	mp.show();
-	mp.plot(v1);
-	
-	mp.trace(1);
-	mp.plot(v2);
-	
-	// 
-	mp.trace(2);
-	mp.linewidth(4);
-	mp.color3f(0, 1, 1);
-	mp.plot(vx, vy);
-
-	while(mp.check())
+	// plot an animated lissajous figure
+	m.clear_all();
+	m.scaling(MP_FIXED_SCALE, -1.5f, 1.5f, -1.5f, 1.5f);
+	for (int i = 0; i < 1000; i++)
 	{
-		mp.redraw();
-		mp.sleep(100);
+		vx.clear();
+		vy.clear();
+		m.clear(0);
+		for (int a = 0; a<250; a++)
+		{
+			// Lissajous Figure
+			vx.push_back(sin(0.1f*a));
+			vy.push_back(cos(((0.1f + 0.0001f*i)*a)));
+		}
+		m.linewidth(2);
+		m.color3f(0, 1, 1);
+		m.plot(vx, vy);
+		m.redraw();
+		m.sleep(20);
 	}
+
+	keep_alive(m);
 }
 
 void demo7()
@@ -1654,11 +1654,7 @@ void demo7()
 		if (!m.check()) { break; }
 		m.sleep(20);
 	}
-	while (m.check())
-	{ 
-		m.redraw();
-		m.sleep(100);
-	}
+	keep_alive(m);
 }
 
 void demo8()
@@ -1687,7 +1683,7 @@ void demo8()
 		m1.sleep(20);
 	}
 
-	while (m1.check())
+	while (m1.check() || m2.check())
 	{
 		m1.redraw();
 		m2.redraw();
