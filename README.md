@@ -118,9 +118,10 @@ alternative syntax to set the color of trace 0:
 ```cpp
 m[0].color3f(1, 1, 0);
 ```
-set the linewidth with m.linewidth(). Setting linewidth to zero removes draws no lines between datapoints. Thus, setting the m.pointsize(float) to e.g. 4.0, while setting linewidth(float) to zero creates a scatter plot. 
+set the linewidth with m.linewidth(). Setting linewidth to zero disables drawing of lines between datapoints.
+Thus, setting the m.pointsize() to e.g. 4.0, while setting linewidth() to zero creates a scatter plot. 
 
-####Scrolling: If you have a continous inflow of datapoints you wish to visualize (e.g. some sensor data), you can use scrolling(int max_points_to_plot). Internally, this implements a ringbuffer. New datapoints will appear at the end of the trace, while old data-points seem to disappear at the beginning of the trace. 
+Scrolling: If you have a continous inflow of datapoints you wish to visualize (e.g. some sensor data), you can use scrolling(int max_points_to_plot). Internally, this implements a ringbuffer. New datapoints will appear at the end of the trace, while old data-points seem to disappear at the beginning of the trace. 
 ```cpp
 m.scrolling(100);
 for (int x = 0; x<500; x++)
