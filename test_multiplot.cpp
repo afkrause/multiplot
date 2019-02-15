@@ -12,7 +12,7 @@ int main()
 	{
 		Multiplot m(50, 50, 640, 480);
 
-		for (int x = 0; x<200; x++)
+		for (int x = 0; x<100; x++)
 		{
 			// plot a sine wave
 			m.plot(float(x), sin(0.1f * x));
