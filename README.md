@@ -98,6 +98,7 @@ To keep a plot window open and to keep that window responsive to events like cha
 ```cpp
 while(m.check())
 {
+	m.redraw();
 	m.sleep(100);
 }
 ```
