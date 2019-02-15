@@ -741,28 +741,29 @@ public:
 		class Trace : public std::vector<Point2d>
 		{
 		public:
-			unsigned int max_points_to_plot = 10000; //std::max(w,h); <- setting max_points that low gives problems with scatter plots
+			unsigned int max_points_to_plot = INT_MAX;
 			bool scroll = false;
 			unsigned int pos = 0; // current position in the ringbuffer
 			float cur_col[3]{ 1.0f, 1.0f, 1.0f };
 			float cur_line_width = 1.0f;
 			float cur_point_size = 0.0f;
-			void draw(Point2d& minimum, Point2d& maximum, Point2d& scale, Point2d& offset)
+
+			void draw(Point2d& minimum, Point2d& maximum, const Point2d& scale, const Point2d& offset)
 			{
-				if(size()==0)return;
+				if (size() == 0) { return; }
 
 				Point2d p,p1,p2;
 				int start=0;
-				if(scroll)
+				if (scroll)
+				{
 					start = pos;
+				}
 
-				float line_width=at(start%size()).line_width;
+				float line_width = at(start % size()).line_width;
 				glLineWidth(line_width);
 				glBegin(GL_LINES);
 				for(unsigned int a=start;a<start+size()-1;a++)
 				{
-					//if(ps>=size())
-					//	ps=0;
 					p1=(*this)[a % size()];
 					p2=(*this)[(a+1) % size()];
 
@@ -819,53 +820,6 @@ public:
 					}
 					glEnd();
 				}
-
-				/*
-				{
-				Point2d p;
-				// for speedup skip points - this is useful if we have many many points
-				float step=1;
-
-				for(unsigned int t=0;t<size();t++)
-				{
-				if(size()>max_points)
-				step=size()/float(max_points);
-
-				glLineWidth(p.line_width);
-				glBegin(GL_LINE_STRIP);
-				for(float a=0;a<size();a+=step)
-				{
-				p=(*this)[int(a)];
-				if(p.line_width>0)
-				{
-				glColor3f(p.r,p.g,p.b);
-				glVertex2f((p.x-offset.x)*scale.x,(p.y-offset.y)*scale.y);
-				}
-				if(p.x>maximum.x)maximum.x=p.x;
-				if(p.x<minimum.x)minimum.x=p.x;
-				if(p.y>maximum.y)maximum.y=p.y;
-				if(p.y<minimum.y)minimum.y=p.y;		
-				}
-				glEnd();
-
-				//glBegin(GL_POINTS);
-				for(float a=0;a<size();a+=step)
-				{
-				p=(*this)[int(a)];
-				if(p.point_size>0.0)
-				{
-				glPointSize(p.point_size);
-				glColor3f(p.r,p.g,p.b);
-				glBegin(GL_POINTS);
-				glVertex2f((p.x-offset.x)*scale.x,(p.y-offset.y)*scale.y);
-				glEnd();
-				}
-
-				//glColor3f(p.r,p.g,p.b);
-				//glVertex2f((p.x-offset.x)*scale.x,(p.y-offset.y)*scale.y);
-				}
-				}
-				}*/
 			}
 
 		public:
@@ -878,24 +832,27 @@ public:
 			{ 
 
 				Point2d p(x,y, cur_col[0], cur_col[1], cur_col[2], cur_line_width, cur_point_size);
+
 				if(scroll)
 				{
 					// this realises a sort of ringbuffer wich is needed for scrolling
-					if(pos<size())
-						(*this)[pos]=p;
+					if (pos < size())
+					{
+						(*this)[pos] = p;
+					}
 					else
+					{
 						push_back(p);
+					}
 					pos++;
 
-					if(pos>=max_points_to_plot)
-						pos=0;
+					if(pos >= max_points_to_plot){ pos = 0; }		
 				}
 				else
+				{
 					push_back(p);
+				}
 			}
-
-
-
 
 			/**
 			*	sets the current drawing color in rgb format. 
@@ -924,30 +881,20 @@ public:
 
 
 			/**
-			*	set the maximum number of points to be plotted. this is useful to
-			*	avoid slow drawing of your trace. if you have 1000 plot-points and 
-			*	set the number of max_points to 100, then only every tenth point gets plotted.
-			*/
-			void max_points(int mx) { max_points_to_plot = mx; }
-
-			/**
 			*	if you call scrolling with a positive number of points to be plotted,
-			*	your graph will scroll left out of the plot-window as you add new plot-points.
+			*	your graph will scroll left out of the plot-window as you add new plot-points beyond number_of_points_to_plot_.
 			*	Zero or a negative number disables scrolling.
 			*/
-			void scrolling(int max_points_to_plot_)
+			void scrolling(int number_of_points_to_plot_)
 			{
-				if(max_points_to_plot<=0)
+				max_points_to_plot = number_of_points_to_plot_;
+
+				if(max_points_to_plot <= 0)
 				{
 					scroll=false;
 					return;
 				}
-
 				scroll=true;
-				max_points_to_plot = max_points_to_plot;
-				//if(traces[cur_trace].capacity()<max_points)
-				//	traces[cur_trace].reserve(max_points);
-
 			}
 
 			/**
@@ -1600,25 +1547,31 @@ void demo5()
 	keep_alive(m);
 }
 
+
 void demo6()
 {
 	Multiplot m(20, 20, 500, 500);
 
 
-	vector<float> v1,v2, vx, vy;
-	for(int a=0;a<100;a++)
+	vector<float> v1, v2, vx, vy;
+	for (int a = 0; a<100; a++)
 	{
-		v1.push_back( sin(0.3f*a) );
-		v2.push_back( cos(0.3f*a)+2.5f );
+		v1.push_back(sin(0.3f*a));
+		v2.push_back(cos(0.3f*a) + 2.5f);
 	}
-	m.plot(v1);	
+	m.plot(v1);
 	m.trace(1);
 	m.plot(v2);
-	m.redraw();
-	m.sleep(1000);
+
+	keep_alive(m);
+}
+
+void demo7()
+{
+	Multiplot m(20, 20, 500, 500);
 
 	// plot an animated lissajous figure
-	m.clear_all();
+	vector<float> vx, vy;
 	m.scaling(MP_FIXED_SCALE, -1.5f, 1.5f, -1.5f, 1.5f);
 	for (int i = 0; i < 1000; i++)
 	{
@@ -1636,12 +1589,13 @@ void demo6()
 		m.plot(vx, vy);
 		m.redraw();
 		m.sleep(20);
+		if (!m.check()) { break; }
 	}
 
 	keep_alive(m);
 }
 
-void demo7()
+void demo8()
 {
 	Multiplot m(10, 10, 600, 300);
 	m.scaling(MP_FIXED_SCALE, 0, 300, -20, 20);
@@ -1657,7 +1611,7 @@ void demo7()
 	keep_alive(m);
 }
 
-void demo8()
+void demo9()
 {
 	#ifndef MULTIPLOT_FLTK
 	cerr << "More than one Multiplot window is currently only supported with FLTK as a backend.\n";
@@ -1706,9 +1660,10 @@ menu:
 	std::cout << "\n(4) demo: how to do a scatter plot (random gauss distribution).";
 	std::cout << "\n(5) demo: fullscreen mode";
 	std::cout << "\n(6) demo: plot the values stored in a std::vector<float>";
-	std::cout << "\n(7) demo: no auto-scaling, set fixed scaling of both x and y axis.";
-	std::cout << "\n(8) demo: using two or more Multiplot windows simulataneously.";
-	std::cout << "\n(9) exit.";
+	std::cout << "\n(7) demo: plot(vx, vy) - the values stored in two vectors vx and vy (animated lissajous figure)";
+	std::cout << "\n(8) demo: no auto-scaling, set fixed scaling of both x and y axis.";
+	std::cout << "\n(9) demo: using two or more Multiplot windows simulataneously.";
+	std::cout << "\n(0) exit.";
 	std::cout << "\nenter number of demo (1..8):";
 	std::cin >> demo_number;
 	switch (demo_number)
@@ -1721,7 +1676,8 @@ menu:
 	case 6:demo6(); break;
 	case 7:demo7(); break;
 	case 8:demo8(); break;
-	case 9:return;  break;
+	case 9:demo9(); break;
+	case 0:return;  break;
 	default:demo1(); break;
 	}
 	goto menu; // goto is not evil. at least in this case...
