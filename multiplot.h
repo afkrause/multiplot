@@ -641,6 +641,10 @@ public:
 	void show()
 	{
 	}
+	
+	void hide()
+	{
+	}
 
 	/**
 	*	propagate window events
@@ -906,9 +910,8 @@ public:
 		};
 
 
-		virtual ~Multiplot() {}
-        // warning: unused parameter 'x'
-        // warning: unused parameter 'y'
+		virtual ~Multiplot() { hide(); check(); }
+        
 		Multiplot(const int x,const int y,const int w,const int h, const std::wstring& title_str_=L"www.andre-krause.net/multiplot", bool fullscreen=false) : Multiplot_base(x,y,w,h, title_str_,fullscreen)
 		{
 			title_str = title_str_;
