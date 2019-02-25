@@ -19,7 +19,11 @@
  * USA.
  *
  * Please report all bugs and problems to "post@andre-krause.net".
- * New versions and bug-fixes under http://www.andre-krause.net
+ * New versions and bug-fixes under
+ * https://github.com/herculon/multiplot
+ * Multiplot homepage:
+ * http://www.andre-krause.net/multiplot
+ * 
  *	
  */
 
