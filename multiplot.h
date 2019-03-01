@@ -62,6 +62,9 @@ INSTALL
 				  
 
 CHANGELOG
+	20190225 - v 0.5.6:
+	- api change: "set_" prefix removed from all member functions
+	- several bugfixes, compiles also on  raspberry pi
 	20190210 - v 0.5.5:
 	- added namespace multiplot
 	- small bugfixes
@@ -183,6 +186,13 @@ enum MP_SCALING
 	MP_FIXED_SCALE
 };
 
+enum MP_SCROLLING
+{
+	MP_NO_SCROLL,
+	MP_SCROLL_LEFT,  // plot scrolls from right to left
+	MP_SCROLL_RIGHT, // TODO plot scrolls from left to right 
+	MP_SCROLL_WARP   //  similiar to an Oscilloscope 
+};
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -750,8 +760,8 @@ public:
 		{
 		public:
 			unsigned int max_points_to_plot = std::numeric_limits<unsigned int>::max();
-			bool scroll = false;
-			unsigned int pos = 0; // current position in the ringbuffer
+			MP_SCROLLING scroll = MP_NO_SCROLL;
+			size_t pos = 0; // current position in the ringbuffer
 			float cur_col[3]{ 1.0f, 1.0f, 1.0f };
 			float cur_line_width = 1.0f;
 			float cur_point_size = 0.0f;
@@ -761,24 +771,33 @@ public:
 				if (size() == 0) { return; }
 
 				Point2d p,p1,p2;
-				int start=0;
-				if (scroll)
+				Point2d trace_min, trace_max;
+				trace_min.x = std::numeric_limits<float>::max();
+				trace_min.y = std::numeric_limits<float>::max();
+				trace_max.x = std::numeric_limits<float>::min();
+				trace_max.y = std::numeric_limits<float>::min();
+
+				size_t start=0;
+				if (MP_SCROLL_LEFT == scroll)
 				{
 					start = pos;
 				}
 
+				// draw the lines of the trace
 				float line_width = at(start % size()).line_width;
 				glLineWidth(line_width);
 				glBegin(GL_LINES);
-				for(unsigned int a=start;a<start+size()-1;a++)
+				for(size_t a = start; a < start + size() - 1; a++)
 				{
+					if ((a + 1) == pos) { continue; } // in MP_SCROLL_WARP mode, skip this line
+					
 					p1=(*this)[a % size()];
 					p2=(*this)[(a+1) % size()];
 
 					// TODO: if distance between two points is smaller than a pixel, then 
 					// skip and interpolate till we have at least a line with length=1pixel
 
-					if(p1.line_width>0)
+					if(p1.line_width > 0)
 					{
 
 						// reduce number of opengl state changes. so begin a new GL_LINES block
@@ -795,22 +814,41 @@ public:
 						glColor3f(p2.r,p2.g,p2.b);
 						glVertex2f((p2.x-offset.x)*scale.x,(p2.y-offset.y)*scale.y);
 					}
-					if(p1.x>maximum.x)maximum.x=p1.x;
-					if(p1.x<minimum.x)minimum.x=p1.x;
-					if(p1.y>maximum.y)maximum.y=p1.y;
-					if(p1.y<minimum.y)minimum.y=p1.y;
+
+					if (p1.x > trace_max.x)trace_max.x = p1.x;
+					if (p1.y > trace_max.y)trace_max.y = p1.y;					
+					if (p1.x < trace_min.x)trace_min.x = p1.x;
+					if (p1.y < trace_min.y)trace_min.y = p1.y;
 				}
+
+				// draw a vertical line to indicate current 
+				if (MP_SCROLL_WARP == scroll)
+				{
+					float x = (*this)[pos].x;
+					glColor3f(0.5f, 0.5f, 0.5f);
+					glVertex2f((x - offset.x)*scale.x, (trace_min.y - offset.y)*scale.y);
+					glVertex2f((x - offset.x)*scale.x, (trace_max.y - offset.y)*scale.y);
+				}
+
+
 				glEnd();
-				if(p2.x>maximum.x)maximum.x=p2.x;
-				if(p2.x<minimum.x)minimum.x=p2.x;
-				if(p2.y>maximum.y)maximum.y=p2.y;
-				if(p2.y<minimum.y)minimum.y=p2.y;
+
+				if (p1.x > trace_max.x)trace_max.x = p1.x;
+				if (p1.y > trace_max.y)trace_max.y = p1.y;
+				if (p1.x < trace_min.x)trace_min.x = p1.x;
+				if (p1.y < trace_min.y)trace_min.y = p1.y;
+
+				if (trace_max.x > maximum.x)maximum.x = trace_max.x;
+				if (trace_max.y > maximum.y)maximum.y = trace_max.y;
+				if (trace_min.x < minimum.x)minimum.x = trace_min.x;
+				if (trace_min.y < minimum.y)minimum.y = trace_min.y;
 
 
+				// draw the markers / points of the trace
 				float point_size=at(start%size()).line_width;
 				glPointSize(point_size);
 				glBegin(GL_POINTS);
-				for(unsigned int a=start;a<start+size();a++)
+				for(size_t a=start;a<start+size();a++)
 				{
 					p=(*this)[a%size()];
 					if(p.point_size>0.0)
@@ -841,9 +879,9 @@ public:
 
 				Point2d p(x,y, cur_col[0], cur_col[1], cur_col[2], cur_line_width, cur_point_size);
 
-				if(scroll)
+				if(MP_NO_SCROLL != scroll)
 				{
-					// this realises a sort of ringbuffer wich is needed for scrolling
+					// this implements a simple ringbuffer
 					if (pos < size())
 					{
 						(*this)[pos] = p;
@@ -893,16 +931,17 @@ public:
 			*	your graph will scroll left out of the plot-window as you add new plot-points beyond number_of_points_to_plot_.
 			*	Zero or a negative number disables scrolling.
 			*/
-			void scrolling(int number_of_points_to_plot_)
+			void scrolling(MP_SCROLLING scrolling_type_, int number_of_points_to_plot_ = -1)
 			{
+				if (MP_NO_SCROLL != scrolling_type_ && number_of_points_to_plot_ <= 0) { throw("error calling Multiplot::scrolling(): The number of points to plot must be a positive integer greater zero."); }
+				scroll = scrolling_type_;
 				max_points_to_plot = number_of_points_to_plot_;
 
 				if(max_points_to_plot <= 0)
 				{
-					scroll=false;
+					scroll=MP_NO_SCROLL;
 					return;
 				}
-				scroll=true;
 			}
 
 			/**
@@ -1008,7 +1047,10 @@ public:
 		/**
 		* changes scrolling behaviour for current trace - see class Trace for details.
 		*/
-		void scrolling(int max_points_to_plot){ traces[cur_trace].scrolling(max_points_to_plot); }
+		void scrolling(MP_SCROLLING scrolling_type, int max_points_to_plot=-1){ traces[cur_trace].scrolling(scrolling_type, max_points_to_plot); }
+		
+		// short hand for backwards compatibility with older Multiplot versions
+		void scrolling(int max_points_to_plot) { traces[cur_trace].scrolling(MP_SCROLL_LEFT, max_points_to_plot); } 
 
 		/**
 		* changes the (auto-)scaling behaviour of the multiplot window. you can choose between 
@@ -1443,8 +1485,8 @@ void demo2()
 	m.bg_color(0,0,0.5);
 
 	// enable scrolling for both traces:
-	m[0].scrolling(100);		// the last  100 added points of the plot will be drawn 
-	m[1].scrolling(100);		// the last  100 added points of the plot will be drawn 
+	m[0].scrolling(MP_SCROLL_LEFT, 100);		// the last  100 added points of the plot will be drawn 
+	m[1].scrolling(MP_SCROLL_LEFT, 100);		// the last  100 added points of the plot will be drawn 
 
 
 
@@ -1476,7 +1518,7 @@ void demo3()
 
 	m.grid(MP_LINEAR_GRID, MP_LOG_GRID);
 
-	m.scrolling(100);		// the last  50 added points of the plot will be drawn 
+	m.scrolling(MP_SCROLL_LEFT, 100);		// the last  50 added points of the plot will be drawn 
 	m.linewidth(2);	// first trace has line-width of 2	
 	m.pointsize(4);		// set the point size of the first trace to 4
 
@@ -1653,6 +1695,40 @@ void demo9()
 }
 
 
+void demo10()
+{
+	Multiplot m(10, 10, 800, 600);
+	m.scaling(MP_FIXED_SCALE, 0.0f, 125.0f, -0.25f, 1.8f);
+
+
+	for (int x = 0; x < 700; x++)
+	{
+		// wrap around after 100 steps
+		int x1 = x % 100;
+
+		// simple sine wave
+		m.trace(0);
+		m.scrolling(MP_SCROLL_WARP, 100);
+		m.plot(x1, 0.25f*sin(0.3f*x) + 1.5f);
+
+
+		// shape similiar to a heart beat
+		m.trace(1);
+		float t = 0.1f * x;
+		m.scrolling(MP_SCROLL_WARP, 100);
+		m.color3f(abs(sin(0.05*x)), abs(cos(0.15*x)), abs(sin(0.25*x)));
+		m.plot(1.25f*x1, pow(sin(t), 60) - 0.25f*pow(sin(t + 0.2f), 20)); 
+
+
+		m.redraw();
+		if (!m.check()) { break; }
+		m.sleep(40);
+	}
+	keep_alive(m);
+}
+
+
+
 
 void test_module()
 {
@@ -1670,8 +1746,9 @@ menu:
 	std::cout << "\n(7) demo: plot(vx, vy) - the values stored in two vectors vx and vy (animated lissajous figure)";
 	std::cout << "\n(8) demo: no auto-scaling, set fixed scaling of both x and y axis.";
 	std::cout << "\n(9) demo: using two or more Multiplot windows simulataneously.";
+	std::cout << "\n(10) demo: Oscilloscope like scrolling (trace jumps / warps around to the beginning of the plot)";
 	std::cout << "\n(0) exit.";
-	std::cout << "\nenter number of demo (1..8):";
+	std::cout << "\nenter number of demo (1..10):";
 	std::cin >> demo_number;
 	switch (demo_number)
 	{
@@ -1684,6 +1761,7 @@ menu:
 	case 7:demo7(); break;
 	case 8:demo8(); break;
 	case 9:demo9(); break;
+	case 10:demo10(); break;
 	case 0:return;  break;
 	default:demo1(); break;
 	}
