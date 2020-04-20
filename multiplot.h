@@ -217,8 +217,7 @@ public:
 		  height = h;
 		  resizable(*this);
 		  caption(title_);
-		  if(fullscreen_)
-			  fullscreen();
+		  if (fullscreen_) { fullscreen(); }
 	  }
 
 	  bool check()
@@ -226,14 +225,9 @@ public:
 		  if (Fl::check()) { return true; } else return false; 
 	  }
 
-	  virtual void draw() override
+	  virtual void draw() //override
 	  {
-		  if(!valid())
-		  {
-			  valid(1);
-		  }
-
-		 // Fl_Gl_Window::draw();
+		  Fl_Gl_Window::draw();
 	  }
 
 	  void caption(const std::string& t)
@@ -1302,7 +1296,7 @@ public:
 			return Point2d((float)xstep,(float)ystep);
 		}
 
-		virtual void draw()
+		virtual void draw() //override
 		{
 			using namespace std;
 
