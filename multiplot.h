@@ -142,6 +142,7 @@ CHANGELOG
 
 
 #ifdef MULTIPLOT_FLTK // tell multiplot to use Fltk to create an Opengl-Window
+	#include <sstream>
 	#include <FL/gl.h>
 	#include <FL/Fl.H>
 	#include <FL/Fl_Gl_Window.H>
@@ -783,7 +784,7 @@ public:
 				glBegin(GL_LINES);
 				for(size_t a = start; a < start + size() - 1; a++)
 				{
-					if ((a + 1) == pos) { continue; } // in MP_SCROLL_WARP mode, skip this line
+					if ((a + 1) == pos) { continue; } // in MP_SCROLL_WARP mode, skip this GL_LINE
 					
 					p1=(*this)[a % size()];
 					p2=(*this)[(a+1) % size()];
@@ -816,7 +817,7 @@ public:
 				}
 
 				// draw a vertical line to indicate current 
-				if (MP_SCROLL_WARP == scroll)
+				if (MP_SCROLL_WARP == scroll && pos < size() )
 				{
 					float x = (*this)[pos].x;
 					glColor3f(0.5f, 0.5f, 0.5f);
@@ -1280,15 +1281,24 @@ public:
                 gl_font(1, 10);
                 y=starty;
                 bailout=0;
+				
 				std::string s;
+				std::stringstream ss;
                 while(y<maximum.y && bailout<100)
                 {
-                    y+=ystep;
-                    bailout++;
-					s = std::to_string(y);
-                    glRasterPos2f(0.5f, (GLfloat)(y-offset.y)*scale.y + 1 ); 
-                    gl_draw(s.c_str(), int(s.length()));
-                }
+					float y_pos = (y - offset.y) * scale.y + 1;
+					if (y_pos >= 0.0 && y_pos < h())
+					{
+						//s = std::to_string(y); // stringstream produces better floating point number formatting out of the box
+						ss << y;
+						s = ss.str();
+						glRasterPos2f(0.5f, (GLfloat)y_pos);
+						gl_draw(s.c_str(), int(s.length()));
+						ss.str("");
+					}
+					y += ystep;
+					bailout++;
+				}
                 //********************************************************************
 				#endif
 			}

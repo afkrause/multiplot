@@ -1,7 +1,7 @@
 #define __TEST_THIS_MODULE__
 
 
-//#define MULTIPLOT_FLTK
+#define MULTIPLOT_FLTK
 #include "multiplot.h"
 using namespace multiplot;
 
