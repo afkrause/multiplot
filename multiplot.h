@@ -226,9 +226,9 @@ public:
 		  if (Fl::check()) { return true; } else return false; 
 	  }
 
-	  virtual void draw() //override
+	  virtual void draw() override
 	  {
-		  Fl_Gl_Window::draw();
+		  //Fl_Gl_Window::draw();
 	  }
 
 	  void caption(const std::string& t)
