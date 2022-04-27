@@ -1,9 +1,9 @@
 # multiplot
 Multiplot is a very easy to use, single-header C++ tool  for plotting auto-scaling curves / scatter plots. 
 
-Multiplot homepage: http://www.andre-krause.net/multiplot
+Multiplot homepage: http://www.andre-krause.de/multiplot
 
-<img src="http://www.andre-krause.net/multiplot/multiplot.png">
+<img src="http://www.andre-krause.de/multiplot/multiplot.png">
 
 With MultiPlot, you can easily plot simple graphs like line- and scatter plots in C++.
 It is a single - header library with zero dependencies under win32.
