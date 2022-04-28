@@ -17,10 +17,10 @@ It scales automatically such that the whole graph fits to the window.
 
 ## here is a minimal C++ example:
 
+```cpp
 #include "multiplot.h"
 using namespace multiplot;
 
-```cpp
 void main()
 {
 	// create a multiplot Window at position (x,y)=(50,50) and width=640, height=480
